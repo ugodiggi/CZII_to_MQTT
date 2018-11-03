@@ -1,3 +1,4 @@
+// vi: tabstop=2
 // Copyright - Jared Gaillard - 2016
 // MIT License
 //
@@ -51,7 +52,7 @@ void ComfortZoneII::setControllerState(byte value) {
 void ComfortZoneII::setLatTemperature(byte value) {
   if (!isValidTemperature(value))
 	  return;
-  
+
   if (lat_Temp_f != value)
     statusModified = true;
 
@@ -61,7 +62,7 @@ void ComfortZoneII::setLatTemperature(byte value) {
 void ComfortZoneII::setOutsideTemperature(float value) {
 if (!isValidTemperature(value))
 	  return;
-  
+
   if (outside_Temp_f != value)
     statusModified = true;
 
@@ -71,7 +72,7 @@ if (!isValidTemperature(value))
 void ComfortZoneII::setOutsideTemperature2(float value) {
   if (!isValidTemperature(value))
 	  return;
-	
+
   if (outside_Temp2_f != value)
     statusModified = true;
 
@@ -82,11 +83,11 @@ bool ComfortZoneII::isValidTemperature(float value) {
   return value < 200.0 && value > -50.0;
 }
 
-void ComfortZoneII::setDayTime(byte day, byte hour, byte minute, byte second){ 
+void ComfortZoneII::setDayTime(byte day, byte hour, byte minute, byte second){
   if( day != time.Wday || hour != time.Hour || minute != time.Minute || second != time.Second){
 	statusModified = true;
   }
-  
+
   time.Wday = day;
   time.Hour = hour;
   time.Minute = minute;
@@ -280,12 +281,12 @@ String ComfortZoneII::toZoneJson() {
 String ComfortZoneII::toStatusJson() {
   StaticJsonBuffer <300> jsonBuffer;
   JsonObject& root = jsonBuffer.createObject();
-  
+
   char timeString[10];
   sprintf(timeString, "%02d:%02d:%02d", time.Hour, time.Minute, time.Second);
   root["time"] = timeString;
   root["day"] = dayStr(time.Wday);
-  
+
   addJson(root, "lat", lat_Temp_f);
   addJson(root, "out", outside_Temp_f);
   addJson(root, "out2", outside_Temp2_f);
