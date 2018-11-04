@@ -55,7 +55,7 @@ class ComfortZoneII
     float outside_Temp2_f = FLOAT_MIN_VALUE;
     TimeElements time;
 
-	bool isValidTemperature(float value);
+    bool isValidTemperature(float value);
     float getTemperatureF(byte highByte, byte lowByte);
     void updateZoneInfo(RingBuffer& ringBuffer);
     void updateOutsideHumidityTemp(RingBuffer& ringBuffer);
@@ -73,17 +73,17 @@ class ComfortZoneII
     void setLatTemperature(byte value);
     void setOutsideTemperature(float value);
     void setOutsideTemperature2(float value);
-	void setDayTime(byte day, byte hour, byte minute, byte second);
+    void setDayTime(byte day, byte hour, byte minute, byte second);
 
     enum ControllerStateFlags {
-      DeHumidify 				  = 1 << 7,
-      Humidify 				    = 1 << 6,
-      Fan_G					      = 1 << 5,
-      ReversingValve			= 1 << 4,
-      AuxHeat2_W2				  = 1 << 3,
-      AuxHeat1_W1				  = 1 << 2,
-      CompressorStage2_Y2	= 1 << 1,
-      CompressorStage1_Y1	= 1 << 0
+      DeHumidify          = 1 << 7,
+      Humidify            = 1 << 6,
+      Fan_G               = 1 << 5,
+      ReversingValve      = 1 << 4,
+      AuxHeat2_W2         = 1 << 3,
+      AuxHeat1_W1         = 1 << 2,
+      CompressorStage2_Y2 = 1 << 1,
+      CompressorStage1_Y1 = 1 << 0
     };
 };
 

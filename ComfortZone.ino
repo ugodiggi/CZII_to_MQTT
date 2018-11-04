@@ -242,22 +242,18 @@ void setupRs485Stream() {
   rs485->begin(9600);
 }
 
-//
 //  Process input data from the rs485 Serial stream.
 //
 //  We look for valid CZII data frames, convert to JSON and then send to the MQTT server.
-//
 void processRs485InputStream() {
   // Process input data
   while (rs485Available() > 0) {
     if (!rs485InputBuf.add((byte)rs485Read())) {
       info_println(F("ERROR: INPUT BUFFER OVERRUN!"));
     }
-
     if (processInputFrame()) {
       debug_println(F("FOUND GOOD CZII FRAME!"));
     }
-
     lastReceivedMessageTimeMillis = millis();
   }
 }
@@ -289,18 +285,14 @@ void processSerialInputStream() {
     byte input = Serial.read();
     bool processByteString = false;
 
-    if (input == ' ' || input == '.' || input == ',') // space, dot, or comma = value delimiter
-    {
+    if (input == ' ' || input == '.' || input == ',') { // space, dot, or comma = value delimiter
       processOutputByteString();
       continue;
-    }
-    else if (input == '|' || input == '\n' || input == '\r') // message delimiter: new line, or line feed
-    {
+    } else if (input == '|' || input == '\n' || input == '\r') { // message delimiter: new line, or line feed
       processOutputByteString();
       if (processSerialInputFrame()) {
         debug_println(F("FOUND GOOD FRAME!"));
       }
-
       serialInputBuf.reset();
       continue;
     }
@@ -327,8 +319,7 @@ bool processSerialInputFrame()
   short bufferLength = serialInputBuf.length();
 
   // Figure out length of buffer
-  if (bufferLength < ComfortZoneII::MIN_MESSAGE_SIZE - 2)
-  {
+  if (bufferLength < ComfortZoneII::MIN_MESSAGE_SIZE - 2) {
     debug_println("serialInputBuf bufferLength < MIN_MESSAGE_SIZE");
     return false;
   }
@@ -342,8 +333,7 @@ bool processSerialInputFrame()
 
   byte frameLength = (byte)(ComfortZoneII::DATA_START_POS + dataLength + 2);
 
-  if (frameLength != (bufferLength + 2))
-  {
+  if (frameLength != (bufferLength + 2)) {
     debug_println("serialInputBuf: **frameLength != bufferLength" + String(frameLength) + ", bufferLength = " + String(bufferLength));
     return false;
   }
@@ -556,9 +546,7 @@ bool processInputFrame() {
   return true;
 }
 
-//
 //  Publish CZII data to the MQTT feed
-//
 void publishCZIIData(RingBuffer ringBuffer) {
   info_print("RS485: ");
   dumpFrame(ringBuffer);
@@ -594,8 +582,9 @@ void publishCZIIData(RingBuffer ringBuffer) {
 //
 void dumpFrame(RingBuffer ringBuffer) {
 
-  if (ringBuffer.length() == 0)
+  if (ringBuffer.length() == 0) {
     return;
+  }
 
   // Destination
   Serial.print(String(ringBuffer.peek(ComfortZoneII::DEST_ADDRESS_POS)) + "." + String(ringBuffer.peek(ComfortZoneII::DEST_ADDRESS_POS + 1)));
@@ -608,16 +597,14 @@ void dumpFrame(RingBuffer ringBuffer) {
   Serial.print("  " + String(dataLength));
 
   // Function
-  if (dataLength < 10)
-  {
+  if (dataLength < 10) {
     Serial.print(" ");  // add extra space
   }
   byte function = ringBuffer.peek(ComfortZoneII::FUNCTION_POS);
   Serial.print("  " + String(ringBuffer.peek(ComfortZoneII::FUNCTION_POS - 2)) + "." + String(ringBuffer.peek(ComfortZoneII::FUNCTION_POS - 1)) + "." + String(function));
 
   // Data
-  if (function < 10)
-  {
+  if (function < 10) {
     Serial.print(" ");  // add extra space
   }
 

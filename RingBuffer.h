@@ -8,8 +8,7 @@
 
 #include "Arduino.h"
 
-class RingBuffer
-{
+class RingBuffer {
   public:
     RingBuffer();
     bool add(byte value);

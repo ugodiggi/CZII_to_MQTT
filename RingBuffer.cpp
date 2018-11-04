@@ -6,8 +6,7 @@
 #include "Arduino.h"
 #include "RingBuffer.h"
 
-RingBuffer::RingBuffer()
-{
+RingBuffer::RingBuffer() {
 }
 
 /**
@@ -27,7 +26,7 @@ bool RingBuffer::add(byte value) {
    Returns the byte from the specified buffer position
 */
 byte RingBuffer::peek(short position) {
-  if ( bufferHeadPos == bufferTailPos)
+  if (bufferHeadPos == bufferTailPos)
     return -1;
 
   return buffer[(bufferTailPos + position) % MAX_BUFFER_SIZE];
@@ -44,9 +43,9 @@ void RingBuffer::set(short position, byte value) {
    Returns the byte from the specified buffer position
 */
 byte RingBuffer::read() {
-  if ( bufferHeadPos == bufferTailPos)
+  if (bufferHeadPos == bufferTailPos) {
     return -1;
-
+  }
   byte value = buffer[bufferTailPos];
   shift(1);
   return value;

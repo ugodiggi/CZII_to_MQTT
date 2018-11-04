@@ -6,10 +6,8 @@
 
 #include "ComfortZoneII.h"
 
-ComfortZoneII::ComfortZoneII(byte numberZones)
-{
+ComfortZoneII::ComfortZoneII(byte numberZones) {
   NUMBER_ZONES = numberZones;
-
   for (byte i = 0; i < NUMBER_ZONES; i++) {
     zones[i] = new Zone(i + 1);
   }
@@ -43,39 +41,39 @@ Zone* ComfortZoneII::getZone(byte zoneIndex) {
 }
 
 void ComfortZoneII::setControllerState(byte value) {
-  if (controllerState != value)
+  if (controllerState != value) {
     statusModified = true;
-
+  }
   controllerState = value;
 }
 
 void ComfortZoneII::setLatTemperature(byte value) {
-  if (!isValidTemperature(value))
-	  return;
-
-  if (lat_Temp_f != value)
+  if (!isValidTemperature(value)) {
+    return;
+  }
+  if (lat_Temp_f != value) {
     statusModified = true;
-
+  }
   lat_Temp_f = value;
 }
 
 void ComfortZoneII::setOutsideTemperature(float value) {
-if (!isValidTemperature(value))
-	  return;
-
-  if (outside_Temp_f != value)
+  if (!isValidTemperature(value)) {
+    return;
+  }
+  if (outside_Temp_f != value) {
     statusModified = true;
-
+  }
   outside_Temp_f = value;
 }
 
 void ComfortZoneII::setOutsideTemperature2(float value) {
-  if (!isValidTemperature(value))
-	  return;
-
-  if (outside_Temp2_f != value)
+  if (!isValidTemperature(value)) {
+    return;
+  }
+  if (outside_Temp2_f != value) {
     statusModified = true;
-
+  }
   outside_Temp2_f = value;
 }
 
@@ -84,19 +82,16 @@ bool ComfortZoneII::isValidTemperature(float value) {
 }
 
 void ComfortZoneII::setDayTime(byte day, byte hour, byte minute, byte second){
-  if( day != time.Wday || hour != time.Hour || minute != time.Minute || second != time.Second){
-	statusModified = true;
+  if (day != time.Wday || hour != time.Hour || minute != time.Minute || second != time.Second) {
+    statusModified = true;
   }
-
   time.Wday = day;
   time.Hour = hour;
   time.Minute = minute;
   time.Second = second;
 }
 
-//
-//	Update cached data
-//
+// Update cached data
 bool ComfortZoneII::update(RingBuffer& ringBuffer) {
 
   short bufferLength = ringBuffer.length();
@@ -239,10 +234,11 @@ void ComfortZoneII::updateOutsideHumidityTemp(RingBuffer& ringBuffer) {
 //
 void ComfortZoneII::updateZoneInfo(RingBuffer& ringBuffer) {
   byte zoneIndex = ringBuffer.peek(2) - 1;
-  if (zoneIndex == 0 || zoneIndex >= NUMBER_ZONES)
+  if (zoneIndex == 0 || zoneIndex >= NUMBER_ZONES) {
     return;
-
-  zones[zoneIndex]->setTemperature(getTemperatureF(ringBuffer.peek(DATA_START_POS + 7), ringBuffer.peek(DATA_START_POS + 8)));
+  }
+  zones[zoneIndex]->setTemperature(getTemperatureF(ringBuffer.peek(DATA_START_POS + 7),
+                                                   ringBuffer.peek(DATA_START_POS + 8)));
   zones[zoneIndex]->setHeatSetpoint(ringBuffer.peek(DATA_START_POS + 10));
   zones[zoneIndex]->setCoolSetpoint(ringBuffer.peek(DATA_START_POS + 11));
 }
@@ -312,8 +308,9 @@ String ComfortZoneII::toStatusJson() {
 //   Add to json if value is not the default value
 //
 void ComfortZoneII::addJson(JsonObject& jsonObject, String key, byte value) {
-  if ( value == (byte) - 1)
+  if (value == (byte) - 1) {
     return;
+  }
   jsonObject[key] = value;
 }
 
