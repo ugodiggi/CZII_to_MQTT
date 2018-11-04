@@ -17,12 +17,12 @@
 //      https://github.com/esp8266/Arduino
 
 #include <ESP8266HTTPUpdateServer.h>
+#include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <ESP8266WiFi.h>
 #include <Adafruit_MQTT.h>
 #include <Adafruit_MQTT_Client.h>
 #include <SoftwareSerial.h>
-#include "WiFiManager.h"
 
 #include "RingBuffer.h"
 #include "ComfortZoneII.h"
@@ -58,7 +58,7 @@ Adafruit_MQTT_Subscribe* mqtt_sub_feed;
 #define RS485Transmit     HIGH
 #define RS485Receive      LOW
 
-SoftwareSerial rs485(SSerialRX, SSerialTX, false, 256);
+SoftwareSerial* rs485;
 
 // CZII Configuration
 ComfortZoneII CzII((byte)2);
@@ -98,33 +98,14 @@ void ensureWifiConnected() {
   Serial.println();
   Serial.print(F("Connecting to WiFi SSID: "));
   Serial.println(WLAN_SSID);
-
-  WiFiManager wifiManager;
-  wifiManager.setAPCallback(configModeCallback);
-
-  //wifiManager.resetSettings();
-
-  // Setup an Access point in order to allow network setup
-  if (!wifiManager.startConfigPortal(hostName)) {
-      Serial.println("Not connected to WiFi but continuing anyway.");
-    } else {
-      //if you get here you have connected to the WiFi
-      Serial.println("Connected to WiFi.");
-
-        //read updated parameters
-      //strcpy(WUNDERGROUND_API_KEY, custom_mqtt_server.getValue());
-    }
-
-  //wifiManager.autoConnect( hostName );
-
-  WiFi.mode(WIFI_AP_STA);
-  WiFi.softAPdisconnect(true);
-
+  WiFi.begin(WLAN_SSID, WLAN_PASS);
   // Establish a connection with our configured access point
-  while( WiFi.waitForConnectResult() != WL_CONNECTED )
-  {
-    WiFi.begin();
+  Serial.print(F("Connecting."))
+  while(WiFi.waitForConnectResult() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(F("."));
   }
+  Serial.println(F("."));
 
   Serial.println(F("WiFi connected"));
   IPAddress ip = WiFi.localIP();
@@ -257,7 +238,8 @@ void processMqttInput() {
 void setupRs485Stream() {
   pinMode(SSerialTxControl, OUTPUT);
   digitalWrite(SSerialTxControl, RS485Receive);  // Init Transceiver
-  rs485.begin(9600);
+  rs485 = new SoftwareSerial(SSerialRX, SSerialTX, false, 256);
+  rs485->begin(9600);
 }
 
 //
@@ -281,12 +263,12 @@ void processRs485InputStream() {
 }
 
 int rs485Available() {
-  return rs485.available();
+  return rs485->available();
 }
 
 int rs485Read() {
   delay(0);   // So we don't get watchdog resets
-  return rs485.read();
+  return rs485->read();
 }
 
 //
@@ -450,7 +432,7 @@ void rs485_TransmitFrame(RingBuffer& ringBuffer) {
 
   int index = 0;
   while (index < frameLength) {
-    rs485.write(ringBuffer.read());
+    rs485->write(ringBuffer.read());
     index++;
   }
 
@@ -665,13 +647,6 @@ void dumpFrame(RingBuffer ringBuffer) {
 // Web Server section
 //
 ///////////////////////////////////////////////////////////////////
-void configModeCallback (WiFiManager *myWiFiManager) {
-  Serial.println("Entered config mode");
-  Serial.println(WiFi.softAPIP());
-
-  Serial.println(myWiFiManager->getConfigPortalSSID());
-}
-
 void webServerHandleRoot()
 {
   String message;
@@ -690,8 +665,8 @@ void webServerHandleRoot()
 void setup() {
   pinMode(BUILTIN_LED, OUTPUT);
 
-  /*Serial.begin(115200);
-  while (!Serial) {
+  Serial.begin(115200);
+  /*while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }*/
 

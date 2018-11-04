@@ -14,8 +14,8 @@
 #include "RingBuffer.h"
 #include "Util.h"
 
-#define TABLE1_TEMPS_ROW   		16
-#define TABLE1_TIME_ROW   		18
+#define TABLE1_TEMPS_ROW   16
+#define TABLE1_TIME_ROW    18
 
 class ComfortZoneII
 {

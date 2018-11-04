@@ -13,8 +13,8 @@
 class Zone {
 
   public:
-    Zone(byte  number) {
-      number = number;
+    Zone(byte number) {
+      zoneNumber = number;
     }
 
     void setCoolSetpoint(byte value) {
