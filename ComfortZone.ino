@@ -40,7 +40,7 @@ WiFiClient client;                              // or... use WiFiClientSecure fo
 #define MQTT_PASSWORD     ""                    // MQTT server password
 
 const char*              hostName = "CZII";     //
-ESP8266WebServer         httpServer(80);        // Http server we will be providing
+ESP8266WebServer         webServer(80);        // Http server we will be providing
 ESP8266HTTPUpdateServer  httpUpdater(false);    // A OverTheAir update service.
 
 // The MQTT client
@@ -100,7 +100,7 @@ void ensureWifiConnected() {
   Serial.println(WLAN_SSID);
   WiFi.begin(WLAN_SSID, WLAN_PASS);
   // Establish a connection with our configured access point
-  Serial.print(F("Connecting."))
+  Serial.print(F("Connecting."));
   while(WiFi.waitForConnectResult() != WL_CONNECTED) {
     delay(500);
     Serial.print(F("."));
@@ -111,11 +111,11 @@ void ensureWifiConnected() {
   IPAddress ip = WiFi.localIP();
   Serial.println("IP address: " + ip.toString());
 
-  httpServer.on("/",      webServerHandleRoot );
+  webServer.on("/", webServerHandleRoot);
 
   // Add OTA update service provided by library "/update" command
-  httpUpdater.setup(&httpServer);
-  httpServer.begin();
+  httpUpdater.setup(&webServer);
+  webServer.begin();
 
   MDNS.begin(hostName);
   MDNS.addService("http", "tcp", 80);
@@ -297,7 +297,7 @@ void processSerialInputStream() {
     else if (input == '|' || input == '\n' || input == '\r') // message delimiter: new line, or line feed
     {
       processOutputByteString();
-      if ( processSerialInputFrame()) {
+      if (processSerialInputFrame()) {
         debug_println(F("FOUND GOOD FRAME!"));
       }
 
@@ -365,7 +365,7 @@ bool processSerialInputFrame()
 //
 void sendOutputFrame()
 {
-  if (rs485OutputBuf.length() == 0 ) {
+  if (rs485OutputBuf.length() == 0) {
     return;
   }
 
@@ -378,7 +378,7 @@ void sendOutputFrame()
     return;
   }
 
-  if (send_time_diff_ms < 100 ) {
+  if (send_time_diff_ms < 100) {
     return;
   }
 
@@ -505,7 +505,7 @@ bool processInputFrame() {
   short bufferLength = rs485InputBuf.length();
 
   // see if the buffer has at least the minimum size for a frame
-  if (bufferLength < ComfortZoneII::MIN_MESSAGE_SIZE ) {
+  if (bufferLength < ComfortZoneII::MIN_MESSAGE_SIZE) {
     //debug_println("rs485InputBuf: bufferLength < MIN_MESSAGE_SIZE");
     return false;
   }
@@ -605,7 +605,7 @@ void dumpFrame(RingBuffer ringBuffer) {
 
   // Data Size
   byte dataLength = ringBuffer.peek(ComfortZoneII::DATA_LENGTH_POS);
-  Serial.print("  " + String(dataLength) );
+  Serial.print("  " + String(dataLength));
 
   // Function
   if (dataLength < 10)
@@ -655,7 +655,7 @@ void webServerHandleRoot()
   message += " \n";
   message += "Commands : /update \n";
 
-  httpServer.send(200, "text/plain", message );
+  webServer.send(200, "text/plain", message);
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -679,19 +679,22 @@ void setup() {
   //setupMqtt();
 }
 
-
-//
-//  Main application loop
-//
-void loop() {
-  
+void slowHeartBeatBlink() {
   digitalWrite(BUILTIN_LED, HIGH);
   Serial.print("---");
   delay(1000);
   digitalWrite(BUILTIN_LED, LOW);
   Serial.println("---");
   delay(1000);
+}
+
+//
+//  Main application loop
+//
+void loop() {
+  slowHeartBeatBlink();
   ensureWifiConnected();
+  webServer.handleClient();
   //processMqttInput();
   //processRs485InputStream();
   //processSerialInputStream();
