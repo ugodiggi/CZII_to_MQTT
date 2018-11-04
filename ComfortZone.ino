@@ -10,8 +10,10 @@
 //   and from a MQTT feed
 //
 //   Uses a MAX485 RS-485 TTL to RS485 MAX485CSA Converter Module For Arduino
-//      CZII RS+ = B+
-//      CZII RS- = A-
+//      Wiring should be:
+//      CZII RS+ = RS-485 B+
+//      CZII RS- = RS-485 A-
+//      CZII VG  = RS-485 ground
 //
 //   Must use ESP8266 Arduino from:
 //      https://github.com/esp8266/Arduino
@@ -27,6 +29,14 @@
 #include "RingBuffer.h"
 #include "ComfortZoneII.h"
 #include "Util.h"
+
+// WlanCredentials.h is not in git (see also .gitignore).
+// It must contain your SSID credentials, i.e.
+//   #ifndef _WLANCREDENTIALS__H_
+//   #define _WLANCREDENTIALS__H_
+//   #define WLAN_SSID         "YOUR_SSID"     // WiFi SSID here
+//   #define WLAN_PASS         "YOUR_PASSWORD" // WiFi password here
+//   #endif  // _WLANCREDENTIALS__H_
 #include "WlanCredentials.h"
 
 
