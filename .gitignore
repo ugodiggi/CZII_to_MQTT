@@ -1,0 +1,4 @@
+# This should just
+#define WLAN_SSID "your ssid"
+#define WLAN_PASS "your pass"
+WlanCredentials.h

@@ -27,10 +27,8 @@
 #include "RingBuffer.h"
 #include "ComfortZoneII.h"
 #include "Util.h"
+#include "WlanCredentials.h"
 
-// WIFI SETUP
-#define WLAN_SSID         "Auronet"           //WiFi SSID here
-#define WLAN_PASS         "test_password_ugo"       //WiFi password here
 
 // Create an ESP8266 WiFiClient class to connect to the MQTT server.
 WiFiClient client;                              // or... use WiFiClientSecure for SSL
