@@ -247,7 +247,7 @@ void setupRs485Stream() {
 //  We look for valid CZII data frames, convert to JSON and then send to the MQTT server.
 void processRs485InputStream() {
   // Process input data
-  while (rs485Available() > 0) {
+  while (rs485->available() > 0) {
     if (!rs485InputBuf.add((byte)rs485Read())) {
       info_println(F("ERROR: INPUT BUFFER OVERRUN!"));
     }
@@ -256,10 +256,6 @@ void processRs485InputStream() {
     }
     lastReceivedMessageTimeMillis = millis();
   }
-}
-
-int rs485Available() {
-  return rs485->available();
 }
 
 int rs485Read() {
@@ -657,7 +653,7 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
   }*/
 
-  //setupRs485Stream()
+  setupRs485Stream();
 
   Serial.println();
   Serial.println(F("Starting..."));
@@ -683,7 +679,7 @@ void loop() {
   ensureWifiConnected();
   webServer.handleClient();
   //processMqttInput();
-  //processRs485InputStream();
+  processRs485InputStream();
   //processSerialInputStream();
   //sendPollingCommands();
   //sendOutputFrame();
