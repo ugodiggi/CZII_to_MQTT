@@ -14,6 +14,11 @@
 //      CZII RS+ = RS-485 B+
 //      CZII RS- = RS-485 A-
 //      CZII VG  = RS-485 ground
+//      NOTE(ugo): For me the current wiring is:
+//      CZII RS+ = RS-485 A
+//      CZII RS- = RS-485 B
+//      CZII VG  = RS-485 ground
+//      I have no explanation why but it works.
 //
 //   Must use ESP8266 Arduino from:
 //      https://github.com/esp8266/Arduino
@@ -54,12 +59,12 @@ ESP8266WebServer         webServer(80);        // Http server we will be providi
 ESP8266HTTPUpdateServer  httpUpdater(false);    // A OverTheAir update service.
 
 // The MQTT client
-Adafruit_MQTT_Client* mqtt;
+Adafruit_MQTT_Client* mqtt = NULL;
 // czii feeds for publishing.
-Adafruit_MQTT_Publish* zone_mqtt_feed;
-Adafruit_MQTT_Publish* status_mqtt_feed;
+Adafruit_MQTT_Publish* zone_mqtt_feed = NULL;
+Adafruit_MQTT_Publish* status_mqtt_feed = NULL;
 // czii/zonetemp feed for subscribing to zone info changes.
-Adafruit_MQTT_Subscribe* mqtt_sub_feed;
+Adafruit_MQTT_Subscribe* mqtt_sub_feed = NULL;
 
 // RS485 Software Serial
 #define SSerialRX         D5                    // RS485 Serial Receive pin
@@ -565,7 +570,9 @@ void publishCZIIData(RingBuffer ringBuffer) {
     String output = CzII.toZoneJson();
     info_print("MQTT Zone: length=" + String(output.length()) + ", JSON=");
     info_println(output);
-    if (!zone_mqtt_feed->publish(output.c_str())) {     // Publish to MQTT server (openhab)
+    if (zone_mqtt_feed == NULL) {
+      info_println(F("publishing to zone_mqtt_feed is disabled."));
+    } else if (!zone_mqtt_feed->publish(output.c_str())) {     // Publish to MQTT server (openhab)
       info_println(F("zone_mqtt_feed.publish Failed"));
     }
   }
@@ -576,7 +583,9 @@ void publishCZIIData(RingBuffer ringBuffer) {
     String output = CzII.toStatusJson();
     info_print("MQTT Status: length=" + String(output.length()) + ", JSON=");
     info_println(output);
-    if (!status_mqtt_feed->publish(output.c_str())) {     // Publish to MQTT server (openhab)
+    if (status_mqtt_feed == NULL) {
+      info_println(F("publishing to status_mqtt_feed is disabled."));
+    } else if (!status_mqtt_feed->publish(output.c_str())) {     // Publish to MQTT server (openhab)
       info_println(F("status_mqtt_feed.publish Failed"));
     }
   }
@@ -685,7 +694,7 @@ void slowHeartBeatBlink() {
 //  Main application loop
 //
 void loop() {
-  slowHeartBeatBlink();
+  //slowHeartBeatBlink();
   ensureWifiConnected();
   webServer.handleClient();
   //processMqttInput();

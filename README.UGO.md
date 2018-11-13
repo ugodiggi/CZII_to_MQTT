@@ -62,3 +62,22 @@ At a glance, I do not see successful frames, so I'll have to read more code.
 ## Next Steps
 * I am planning to use the 12V from the CZII to power the whole thing.
 * Actually read the serial output and try to figure out exactly what happened.
+
+# 2018-11-12 22:31:04
+## Done
+* I figured out that most likely the data that I had acquired the last time was bit-inverted.
+  This would make sense if the cables are inverted, so I tried inverting the R+/R- cabling.
+  * R+ in the CZII to A in the 485
+  * R- in the CZII to B in the 485
+  * VG in the CZII to the ground in the 485 and to the esp8266
+  I have no real idea why this would make sense, but the data now does work for me.
+* A couple small issues since the MQTT queues were uninitialized but being sent-to.
+  I installed https://github.com/me-no-dev/EspExceptionDecoder to symbolize the stack trace and it
+  worked beautifully.
+* Acquired some data - see `sample_data/20181112_1913.txt`. Have not had time to look at it yet,
+  but it seemed like it has bee acquiring with no snags.
+
+## Next Steps
+* Look at the data
+* Maybe re-enable the MQTT part of the code, since it is currently commented out and could be
+  tested without the real data acquisition.
