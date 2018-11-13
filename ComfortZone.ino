@@ -55,7 +55,7 @@ WiFiClient client;                              // or... use WiFiClientSecure fo
 #define MQTT_PASSWORD     ""                    // MQTT server password
 
 const char*              hostName = "CZII";     //
-ESP8266WebServer         webServer(80);        // Http server we will be providing
+ESP8266WebServer         webServer(80);         // Http server we will be providing
 ESP8266HTTPUpdateServer  httpUpdater(false);    // A OverTheAir update service.
 
 // The MQTT client
@@ -76,7 +76,8 @@ Adafruit_MQTT_Subscribe* mqtt_sub_feed = NULL;
 SoftwareSerial* rs485;
 
 // CZII Configuration
-ComfortZoneII CzII((byte)2);
+#define NUM_ZONES 3
+ComfortZoneII CzII((byte)NUM_ZONES);
 
 // CZII Commands
 #define COMMAND_TIME_PERIOD     10000
