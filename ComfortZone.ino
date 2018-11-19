@@ -48,11 +48,13 @@
 // Create an ESP8266 WiFiClient class to connect to the MQTT server.
 WiFiClient client;                              // or... use WiFiClientSecure for SSL
 
-// MQTT SETUP
-#define MQTT_SERVER       "MQTT_SERVER_URL"     // Local OpenHab and MQ server
-#define MQTT_SERVERPORT   1883                  // use 8883 for SSL
-#define MQTT_USERNAME     ""                    // MQTT server username
-#define MQTT_PASSWORD     ""                    // MQTT server password
+// MqttConf.h is not in git (see also .gitignore).
+// It must contain your MQTT credential/configuration, i.e.
+//   #define MQTT_SERVER       "MQTT_SERVER_URL"     // Local OpenHab and MQ server
+//   #define MQTT_SERVERPORT   1883                  // use 8883 for SSL
+//   #define MQTT_USERNAME     ""                    // MQTT server username
+//   #define MQTT_PASSWORD     ""                    // MQTT server password
+#include "MqttConf.h"
 
 const char*              hostName = "CZII";     //
 ESP8266WebServer         webServer(80);         // Http server we will be providing
@@ -140,7 +142,8 @@ void ensureWifiConnected() {
 // Init function for the MQTT client. Should be called in setup()
 void setupMqtt() {
   // Setup the MQTT client class by passing in the WiFi client and MQTT server and login details.
-  mqtt = new Adafruit_MQTT_Client(&client, MQTT_SERVER, MQTT_SERVERPORT, MQTT_USERNAME, MQTT_PASSWORD);
+  mqtt = new Adafruit_MQTT_Client(
+  &client, MQTT_SERVER, MQTT_SERVERPORT, MQTT_USERNAME, MQTT_PASSWORD);
 
   // Setup 'czii' (Comfort Zone II) feeds for publishing.
   zone_mqtt_feed = new Adafruit_MQTT_Publish(mqtt, "czii/zone");
@@ -679,7 +682,7 @@ void setup() {
   Serial.println(F("Starting..."));
   Serial.println("Starting...");
 
-  //setupMqtt();
+  setupMqtt();
 }
 
 void slowHeartBeatBlink() {
@@ -698,7 +701,7 @@ void loop() {
   //slowHeartBeatBlink();
   ensureWifiConnected();
   webServer.handleClient();
-  //processMqttInput();
+  processMqttInput();
   processRs485InputStream();
   //processSerialInputStream();
   //sendPollingCommands();

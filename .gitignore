@@ -1,4 +1,11 @@
-# This should just
+# This should just have a few defines:
 #define WLAN_SSID "your ssid"
 #define WLAN_PASS "your pass"
 WlanCredentials.h
+
+# This should just have a few defines:
+#define MQTT_SERVER       "MQTT_SERVER_URL"     // Local OpenHab and MQ server
+#define MQTT_SERVERPORT   1883                  // use 8883 for SSL
+#define MQTT_USERNAME     ""                    // MQTT server username
+#define MQTT_PASSWORD     ""                    // MQTT server password
+MqttConf.h
