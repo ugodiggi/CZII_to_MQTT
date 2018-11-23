@@ -81,3 +81,29 @@ At a glance, I do not see successful frames, so I'll have to read more code.
 * Look at the data
 * Maybe re-enable the MQTT part of the code, since it is currently commented out and could be
   tested without the real data acquisition.
+
+# 2018-11-23 12:36:32
+## Current status:
+* Acquiring data is working
+* Comm with mqtt running on my laptop (in container) is working
+* OpenHAB running on my laptop (in container) is working
+
+## Next Steps
+* Create WebServer for mesquitto + OpenHAB
+  * Try using AWS or Google Cloud
+* Create "Release" on the esp8266:
+  * Enable data acquisition from 485
+  * Enable mqtt connection
+  * Add some mqtt pulse signal, and some mqtt input from OpenHAB
+  * Enable polling of the CZII for info
+* Test release before physically plugging to CZII
+  * mqtt pulse signal should be functional
+  * ensure that I have a reasonable way to log everything that is sent to mesquitto
+* Plug in esp8266 to CZII:
+  * Use CZII for power (should go through esp8266 directly, should check that the voltage is
+    right).
+
+The hope is that I will be able to:
+* read the temperature for each of the three zones
+* maybe read the program?
+* hopefully, set the temperature and even better set the program.
