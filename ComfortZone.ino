@@ -27,10 +27,10 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <ESP8266WiFi.h>
-#include <Adafruit_MQTT.h>
-#include <Adafruit_MQTT_Client.h>
 #include <SoftwareSerial.h>
 
+#include "Action.h"
+#include "MqttController.h"
 #include "RingBuffer.h"
 #include "ComfortZoneII.h"
 #include "Util.h"
@@ -44,29 +44,15 @@
 //   #endif  // _WLANCREDENTIALS__H_
 #include "WlanCredentials.h"
 
+MqttController mqttController;
 
 // Create an ESP8266 WiFiClient class to connect to the MQTT server.
 WiFiClient client;                              // or... use WiFiClientSecure for SSL
-
-// MqttConf.h is not in git (see also .gitignore).
-// It must contain your MQTT credential/configuration, i.e.
-//   #define MQTT_SERVER       "MQTT_SERVER_URL"     // Local OpenHab and MQ server
-//   #define MQTT_SERVERPORT   1883                  // use 8883 for SSL
-//   #define MQTT_USERNAME     ""                    // MQTT server username
-//   #define MQTT_PASSWORD     ""                    // MQTT server password
-#include "MqttConf.h"
 
 const char*              hostName = "CZII";     //
 ESP8266WebServer         webServer(80);         // Http server we will be providing
 ESP8266HTTPUpdateServer  httpUpdater(false);    // A OverTheAir update service.
 
-// The MQTT client
-Adafruit_MQTT_Client* mqtt = NULL;
-// czii feeds for publishing.
-Adafruit_MQTT_Publish* zone_mqtt_feed = NULL;
-Adafruit_MQTT_Publish* status_mqtt_feed = NULL;
-// czii/zonetemp feed for subscribing to zone info changes.
-Adafruit_MQTT_Subscribe* mqtt_sub_feed = NULL;
 
 // RS485 Software Serial
 #define SSerialRX         D5                    // RS485 Serial Receive pin
@@ -100,8 +86,6 @@ RingBuffer rs485OutputBuf;
 RingBuffer serialInputBuf;
 String serialInputByte;
 
-void setupMqtt();
-void MQTT_connect();        // Bug workaround for Arduino 1.6.6, it seems to need a function declaration for some reason (only affects ESP8266, likely an arduino-builder bug).
 void webServerHandleRoot();
 void configModeCallback();
 void setupRs485Stream();
@@ -139,81 +123,7 @@ void ensureWifiConnected() {
   MDNS.addService("http", "tcp", 80);
 }
 
-// Init function for the MQTT client. Should be called in setup()
-void setupMqtt() {
-  // Setup the MQTT client class by passing in the WiFi client and MQTT server and login details.
-  mqtt = new Adafruit_MQTT_Client(
-  &client, MQTT_SERVER, MQTT_SERVERPORT, MQTT_USERNAME, MQTT_PASSWORD);
-
-  // Setup 'czii' (Comfort Zone II) feeds for publishing.
-  zone_mqtt_feed = new Adafruit_MQTT_Publish(mqtt, "czii/zone");
-  status_mqtt_feed = new Adafruit_MQTT_Publish(mqtt, "czii/status");
-
-  // Setup 'czii/zonetemp' feed for subscribing to zone info changes.
-  mqtt_sub_feed = new Adafruit_MQTT_Subscribe(mqtt, "czii/zonetemp");
-
-  // Actually subscribe.
-  mqtt->subscribe(mqtt_sub_feed);
-}
-
-//
-//  Function to connect and reconnect as necessary to the MQTT server.
-//  Should be called in the loop function and it will take care if connecting.
-//
-void MQTT_connect() {
-  // Stop if already connected.
-  if (mqtt->connected()) {
-    return;
-  }
-
-  Serial.println();
-  Serial.println(F("Connecting to MQTT..."));
-
-  uint8_t retries = 3;
-  int8_t ret;
-  while ((ret = mqtt->connect()) != 0) { // connect will return 0 for connected
-    digitalWrite(BUILTIN_LED, LOW);  // Flash LED while connecting to WiFi
-
-    Serial.println(mqtt->connectErrorString(ret));
-    Serial.println(F("Retrying MQTT connection in 5 seconds..."));
-
-    mqtt->disconnect();
-    delay(5000);  // wait 5 seconds
-    retries--;
-    if (retries == 0) {
-      // basically die and wait for WDT to reset me
-      while (1);
-    }
-
-    digitalWrite(BUILTIN_LED, HIGH);
-  }
-
-  if (mqtt->connect() == 0) {
-    Serial.println(F("MQTT Connected."));
-  }
-  else {
-    Serial.println(F("MQTT Connection Failed!!!!"));
-  }
-
-  Serial.println();
-}
-
-//
-//  Process input from the MQTT subscription feeds
-//
-void processMqttInput() {
-  // Ensure the connection to the MQTT server is alive (this will make the first
-  // connection and automatically reconnect when disconnected).  See the MQTT_connect
-  // function definition further below.
-  MQTT_connect();
-
-  Adafruit_MQTT_Subscribe *subscription;
-  while ((subscription = mqtt->readSubscription(1))) {
-    if (subscription == mqtt_sub_feed) {
-      Serial.print(F("mqtt_sub_feed received : "));
-
-      String value = (char *)mqtt_sub_feed->lastread;
-      Serial.println(value);
+void applyAction(Action *a) {
       Zone* zone1 =  CzII.getZone(0);
       Zone* zone2 =  CzII.getZone(1);
       byte zone1HeatSetpoint = zone1->getHeatSetpoint();
@@ -222,12 +132,13 @@ void processMqttInput() {
       byte zone2CoolSetpoint = zone2->getCoolSetpoint();
       bool sendCommand = false;
 
-      if (value == "1") {
-        zone1HeatSetpoint++;
+      if (a->zone == 0) {
+        zone1HeatSetpoint += a->heatSetpointDelta;
+        zone1CoolSetpoint += a->coolSetpointDelta;
         sendCommand = true;
-      }
-      else if (value == "0") {
-        zone1HeatSetpoint--;
+      } else if (a->zone == 1) {
+        zone2HeatSetpoint += a->heatSetpointDelta;
+        zone2CoolSetpoint += a->coolSetpointDelta;
         sendCommand = true;
       }
 
@@ -244,7 +155,13 @@ void processMqttInput() {
         REQUEST_INFO_TEMPLATE[10] = 16;
         rs485_EnqueFrame(REQUEST_INFO_TEMPLATE, array_len(REQUEST_INFO_TEMPLATE));
       }
-    }
+}
+
+void processMqttInput() {
+  mqttController.ensureConnected();
+  Action *a;
+  while ((a = mqttController.processMqttInput()) != NULL) {
+    applyAction(a);
   }
 }
 
@@ -368,8 +285,7 @@ bool processSerialInputFrame()
 //
 //  Send the next queued output frame
 //
-void sendOutputFrame()
-{
+void sendOutputFrame() {
   if (rs485OutputBuf.length() == 0) {
     return;
   }
@@ -572,26 +488,14 @@ void publishCZIIData(RingBuffer ringBuffer) {
     CzII.clearZoneModified();
 
     String output = CzII.toZoneJson();
-    info_print("MQTT Zone: length=" + String(output.length()) + ", JSON=");
-    info_println(output);
-    if (zone_mqtt_feed == NULL) {
-      info_println(F("publishing to zone_mqtt_feed is disabled."));
-    } else if (!zone_mqtt_feed->publish(output.c_str())) {     // Publish to MQTT server (openhab)
-      info_println(F("zone_mqtt_feed.publish Failed"));
-    }
+    mqttController.publishToZoneFeed(output);
   }
 
   if (CzII.isStatusModified()) {
     CzII.clearStatusModified();
 
     String output = CzII.toStatusJson();
-    info_print("MQTT Status: length=" + String(output.length()) + ", JSON=");
-    info_println(output);
-    if (status_mqtt_feed == NULL) {
-      info_println(F("publishing to status_mqtt_feed is disabled."));
-    } else if (!status_mqtt_feed->publish(output.c_str())) {     // Publish to MQTT server (openhab)
-      info_println(F("status_mqtt_feed.publish Failed"));
-    }
+    mqttController.publishToStatusFeed(output);
   }
 }
 
@@ -682,7 +586,7 @@ void setup() {
   Serial.println(F("Starting..."));
   Serial.println("Starting...");
 
-  setupMqtt();
+  mqttController.setup(&client);
 }
 
 void slowHeartBeatBlink() {
@@ -702,6 +606,7 @@ void loop() {
   ensureWifiConnected();
   webServer.handleClient();
   processMqttInput();
+  mqttController.publishPulse();
   processRs485InputStream();
   //processSerialInputStream();
   //sendPollingCommands();
