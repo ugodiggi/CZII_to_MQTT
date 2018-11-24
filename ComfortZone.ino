@@ -278,7 +278,7 @@ bool processSerialInputFrame()
 
   dumpFrame(serialInputBuf);
 
-  rs485_TransmitFrame(serialInputBuf);
+  rs485TransmitFrame(serialInputBuf);
   return true;
 }
 
@@ -290,22 +290,23 @@ void sendOutputFrame() {
     return;
   }
 
-  int send_time_diff_ms = millis() - lastSendTimeMillis;
-  int last_message_time_diff_ms = millis() - lastReceivedMessageTimeMillis;
+  unsigned long now = millis();
+  int sendTimeDtMillis = now - lastSendTimeMillis;
+  int lastMessageTimeDtMillis = now - lastReceivedMessageTimeMillis;
 
   // Try to reduce bus contention by delaying 300 ms since last received message (frame) before
   // we send anything out.
-  if (rowIndex == 0 && last_message_time_diff_ms < 300) {
+  if (rowIndex == 0 && lastMessageTimeDtMillis < 300) {
     return;
   }
 
-  if (send_time_diff_ms < 100) {
+  if (sendTimeDtMillis < 100) {
     return;
   }
 
-  rs485_TransmitFrame(rs485OutputBuf);
+  rs485TransmitFrame(rs485OutputBuf);
 
-  lastSendTimeMillis = millis();
+  lastSendTimeMillis = now;
 }
 
 void rs485_EnqueFrame(byte values[], byte size) {
@@ -326,7 +327,7 @@ void rs485_EnqueFrame(byte values[], byte size) {
   }
 }
 
-void rs485_TransmitFrame(RingBuffer& ringBuffer) {
+void rs485TransmitFrame(RingBuffer& ringBuffer) {
   short bufferLength = ringBuffer.length();
   if (bufferLength == 0) {
     return;
@@ -335,7 +336,7 @@ void rs485_TransmitFrame(RingBuffer& ringBuffer) {
   info_print("OUTPUT: ");
 
   if (bufferLength < ComfortZoneII::DATA_LENGTH_POS) {
-    info_println("rs485_TransmitFrame: not enough data");
+    info_println("rs485TransmitFrame: not enough data");
     return;
   }
 
@@ -343,7 +344,7 @@ void rs485_TransmitFrame(RingBuffer& ringBuffer) {
   byte frameLength = (byte)(ComfortZoneII::DATA_START_POS + dataLength + 2);
 
   if (bufferLength < frameLength) {
-    info_println("rs485_TransmitFrame: not enough data");
+    info_println("rs485TransmitFrame: not enough data");
     return;
   }
 
@@ -361,13 +362,14 @@ void rs485_TransmitFrame(RingBuffer& ringBuffer) {
 }
 
 void sendPollingCommands() {
-  int polling_time_diff_ms = millis() - lastPollingTimeMillis;
+  unsigned long now = millis();
+  int dtMillis = now - lastPollingTimeMillis;
 
   // Try to reduce bus contention by delaying 1000ms since last received message (frame) before
   // we send anything out.
   // If it hasn't been at least COMMAND_TIME_PERIOD milliseconds since last command
   // or the last message received time is less than a second then return
-  if (polling_time_diff_ms < COMMAND_TIME_PERIOD) {
+  if (dtMillis < COMMAND_TIME_PERIOD) {
     return;
   }
 
@@ -377,7 +379,7 @@ void sendPollingCommands() {
     rs485_EnqueFrame(REQUEST_INFO_TEMPLATE, array_len(REQUEST_INFO_TEMPLATE));
   }
 
-  lastPollingTimeMillis = millis();
+  lastPollingTimeMillis = now;
 }
 
 //
@@ -589,26 +591,14 @@ void setup() {
   mqttController.setup(&client);
 }
 
-void slowHeartBeatBlink() {
-  digitalWrite(BUILTIN_LED, HIGH);
-  Serial.print("---");
-  delay(1000);
-  digitalWrite(BUILTIN_LED, LOW);
-  Serial.println("---");
-  delay(1000);
-}
-
-//
-//  Main application loop
-//
+// Main application loop
 void loop() {
-  //slowHeartBeatBlink();
   ensureWifiConnected();
   webServer.handleClient();
   processMqttInput();
   mqttController.publishPulse();
   processRs485InputStream();
-  //processSerialInputStream();
-  //sendPollingCommands();
-  //sendOutputFrame();
+  processSerialInputStream();
+  sendPollingCommands();
+  sendOutputFrame();
 }

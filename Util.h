@@ -9,7 +9,7 @@
 #include <Arduino.h>
 #include "RingBuffer.h"
 
-//#define DEBUG_LOG;
+#define DEBUG_LOG;
 #define INFO_LOG;
 
 #ifdef DEBUG_LOG
