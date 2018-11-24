@@ -113,8 +113,9 @@ Action* MqttController::processMqttInput() {
       String value = (char *)pulseUpdateSubFeed->lastread;
       Serial.println(value);
       long val = value.toInt();
-      if (val > 0 && val < 1000) {
+      if (val >= 0 && val < 1000) {
         pulseStatus = val;
+        lastPulseSendTimeMillis = 0;
       } else {
         Serial.println(F("pulseUpdateSubFeed - unrecognized value."));
       }
