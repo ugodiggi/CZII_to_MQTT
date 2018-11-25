@@ -100,14 +100,9 @@ Action* MqttController::processMqttInput() {
   while ((subscription = mqtt->readSubscription(1))) {
     if (subscription == mqtt_sub_feed) {
       Serial.print(F("mqtt_sub_feed received : "));
-
       String value = (char *)mqtt_sub_feed->lastread;
       Serial.println(value);
-      if (value == "1") {
-        return new Action(0, 1, 0);
-      } else if (value == "0") {
-        return new Action(0, -1, 0);
-      }
+      return actionFromJson(value);
     } else if (subscription == pulseUpdateSubFeed) {
       Serial.print(F("pulseUpdateSubFeed received : "));
       String value = (char *)pulseUpdateSubFeed->lastread;
@@ -121,6 +116,7 @@ Action* MqttController::processMqttInput() {
       }
     }
   }
+  return NULL;
 }
 
 void MqttController::publishToZoneFeed(String json) {

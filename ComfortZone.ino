@@ -133,12 +133,12 @@ void applyAction(Action *a) {
       bool sendCommand = false;
 
       if (a->zone == 0) {
-        zone1HeatSetpoint += a->heatSetpointDelta;
-        zone1CoolSetpoint += a->coolSetpointDelta;
+        zone1HeatSetpoint += a->heatSetpoint;
+        zone1CoolSetpoint += a->coolSetpoint;
         sendCommand = true;
       } else if (a->zone == 1) {
-        zone2HeatSetpoint += a->heatSetpointDelta;
-        zone2CoolSetpoint += a->coolSetpointDelta;
+        zone2HeatSetpoint += a->heatSetpoint;
+        zone2CoolSetpoint += a->coolSetpoint;
         sendCommand = true;
       }
 
