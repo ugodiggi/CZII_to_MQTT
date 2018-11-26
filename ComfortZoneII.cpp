@@ -322,8 +322,3 @@ void ComfortZoneII::addJson(JsonObject& jsonObject, String key, float value) {
     jsonObject[key] = value;
   }
 }
-
-
-
-
-

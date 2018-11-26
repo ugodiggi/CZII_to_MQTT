@@ -97,7 +97,7 @@ Action* MqttController::processMqttInput() {
   this->ensureConnected();
 
   Adafruit_MQTT_Subscribe *subscription;
-  while ((subscription = mqtt->readSubscription(1))) {
+  while ((subscription = mqtt->readSubscription(10))) {
     if (subscription == mqtt_sub_feed) {
       Serial.print(F("mqtt_sub_feed received : "));
       String value = (char *)mqtt_sub_feed->lastread;

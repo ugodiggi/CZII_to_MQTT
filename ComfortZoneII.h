@@ -21,6 +21,9 @@ class ComfortZoneII
 {
   public:
     ComfortZoneII(byte numberZones);
+    int numZones() {
+      return NUMBER_ZONES;
+    }
     Zone* getZone(byte zoneIndex);
     bool update(RingBuffer& ringBuffer);
     bool isZoneModified();

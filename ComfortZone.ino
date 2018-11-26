@@ -71,7 +71,11 @@ ComfortZoneII CzII((byte)NUM_ZONES);
 #define COMMAND_TIME_PERIOD     10000
 #define DEVICE_ADDRESS          99
 byte REQUEST_INFO_TEMPLATE[]          = {1, 0, DEVICE_ADDRESS, 0, 3, 0, 0, 11, 0, 255, 255, 0, 0};  // Note: Replace the table and row values, and calc checksum before sending out request
-byte SET_ZONE_TEMPERATURE_TEMPLATE[]  = {1, 0, DEVICE_ADDRESS, 0, 19, 0, 0, 12, 0, 1, 16, 76, 76, 76, 76, 76, 76, 76, 76, 68, 68, 68, 68, 68, 68, 68, 68, 255, 255};
+byte SET_ZONE_TEMPERATURE_TEMPLATE[]  = {
+  // 0  1  2               3  4   5  6  7   8  9  10  11  12  13  14  15  16  17  18  19  20  21
+     1, 0, DEVICE_ADDRESS, 0, 19, 0, 0, 12, 0, 1, 16, 76, 76, 76, 76, 76, 76, 76, 76, 68, 68, 68,
+  // 22  23  24  25  26  27   28
+     68, 68, 68, 68, 68, 255, 255};
 
 byte TABLE1_POLLING_ROWS[] = {6, TABLE1_TEMPS_ROW, TABLE1_TIME_ROW};
 byte rowIndex = 0;
@@ -124,37 +128,31 @@ void ensureWifiConnected() {
 }
 
 void applyAction(Action *a) {
-      Zone* zone1 =  CzII.getZone(0);
-      Zone* zone2 =  CzII.getZone(1);
-      byte zone1HeatSetpoint = zone1->getHeatSetpoint();
-      byte zone2HeatSetpoint = zone2->getHeatSetpoint();
-      byte zone1CoolSetpoint = zone1->getCoolSetpoint();
-      byte zone2CoolSetpoint = zone2->getCoolSetpoint();
-      bool sendCommand = false;
-
-      if (a->zone == 0) {
-        zone1HeatSetpoint += a->heatSetpoint;
-        zone1CoolSetpoint += a->coolSetpoint;
-        sendCommand = true;
-      } else if (a->zone == 1) {
-        zone2HeatSetpoint += a->heatSetpoint;
-        zone2CoolSetpoint += a->coolSetpoint;
-        sendCommand = true;
+  if (a->zone < CzII.numZones()) {
+    bool sendData = false;
+    for (int i = 0; i < CzII.numZones(); ++i) {
+      Zone* zone =  CzII.getZone(i);
+      byte zoneHeatSetpoint = zone->getHeatSetpoint();
+      byte zoneCoolSetpoint = zone->getCoolSetpoint();
+      if (a->zone == i) {
+        zoneHeatSetpoint = a->heatSetpoint;
+        zoneCoolSetpoint = a->coolSetpoint;
+        sendData = true;
       }
+      // Update temperatures
+      SET_ZONE_TEMPERATURE_TEMPLATE[11 + i] = zoneCoolSetpoint;  // 11, 12, 13, ...
+      SET_ZONE_TEMPERATURE_TEMPLATE[19 + i] = zoneHeatSetpoint;  // 19, 20, 21, ...
+    }
 
-      if (sendCommand) {
-        // Update temperatures
-        SET_ZONE_TEMPERATURE_TEMPLATE[11] = zone1CoolSetpoint;
-        SET_ZONE_TEMPERATURE_TEMPLATE[12] = zone2CoolSetpoint;
-        SET_ZONE_TEMPERATURE_TEMPLATE[19] = zone1HeatSetpoint;
-        SET_ZONE_TEMPERATURE_TEMPLATE[20] = zone2HeatSetpoint;
-        rs485_EnqueFrame(SET_ZONE_TEMPERATURE_TEMPLATE, array_len(SET_ZONE_TEMPERATURE_TEMPLATE));
+    if (sendData) {
+      rs485_EnqueFrame(SET_ZONE_TEMPERATURE_TEMPLATE, array_len(SET_ZONE_TEMPERATURE_TEMPLATE));
 
-        // Request latest data
-        REQUEST_INFO_TEMPLATE[9] = 1;   // Table = 1
-        REQUEST_INFO_TEMPLATE[10] = 16;
-        rs485_EnqueFrame(REQUEST_INFO_TEMPLATE, array_len(REQUEST_INFO_TEMPLATE));
-      }
+      // Request latest data
+      REQUEST_INFO_TEMPLATE[9] = 1;   // Table = 1
+      REQUEST_INFO_TEMPLATE[10] = 16;
+      rs485_EnqueFrame(REQUEST_INFO_TEMPLATE, array_len(REQUEST_INFO_TEMPLATE));
+    }
+  }
 }
 
 void processMqttInput() {
@@ -577,6 +575,7 @@ void webServerHandleRoot()
 void setup() {
   pinMode(BUILTIN_LED, OUTPUT);
 
+  ensureWifiConnected();
   Serial.begin(115200);
   /*while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
@@ -586,7 +585,6 @@ void setup() {
 
   Serial.println();
   Serial.println(F("Starting..."));
-  Serial.println("Starting...");
 
   mqttController.setup(&client);
 }
